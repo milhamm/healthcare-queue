@@ -1,5 +1,4 @@
 from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.server import SimpleXMLRPCRequestHandler
 # Import Redis
 from redis import Redis
 # Import Queue
@@ -12,7 +11,7 @@ class ClinicService:
         - Buat queue kosong
         - Connect Redis
     """
-    def __init__(self):
+    def __init__(self, q):
         self.total_patients = 0
         self.clinic = {
             1: {
@@ -28,7 +27,7 @@ class ClinicService:
                 "max_queue": 5
             }
         }
-        self.q = Queue(Redis('178.128.25.31'))
+        self.q = q
        
     
     def register(self, name, date_of_birth, clinic_id):
@@ -102,7 +101,9 @@ class ClinicService:
 
 # Main function
 if __name__ == '__main__':
+    q = Queue(connection=Redis(host='178.128.25.31', port=6379))
+
     server = SimpleXMLRPCServer(("localhost", 6969))
     server.register_introspection_functions()
-    server.register_instance(ClinicService())
+    server.register_instance(ClinicService(q))
     server.serve_forever()
