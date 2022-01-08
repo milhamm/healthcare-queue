@@ -1,10 +1,11 @@
-# Import XMLRPC
+from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCRequestHandler
 # Import Redis
 from redis import Redis
 # Import Queue
 from rq import Queue
 
-class KlinikService:
+class ClinicService:
     """        
         - Buat queue kosong
         - Connect Redis
@@ -29,32 +30,47 @@ class KlinikService:
        
     
     def register(self, name, date_of_birth, clinic_id):
+        """        
+            Register the patient by name and date of birth
+            Detail:
+                - Create a patient_id based on the current queue
+                - Check whether the queue is full
+                - Insert the data to the queue (FIFO)
+                - Update the klinik data (in_queue + 1)
+                - Enqueue the remove_patient to the Task Queue (Redis)
+                - return patient data
+        """
+        
         patient = {
             'patient_id': 0000, # Mbuh mau digenerate make apa
             'name': name,
             'dob': date_of_birth
-        }   
-        
-        """        
-        Register the patient by name and date of birth
-        Detail:
-            - Create a patient_id based on the current queue
-            - Check whether the queue is full
-            - Insert the data to the queue (FIFO)
-            - Update the klinik data (in_queue + 1)
-            - Enqueue the remove_patient to the Task Queue (Redis)
-            - return patient data
-        """
+        }  
+
+        if self.clinic[clinic_id].in_queue == self.clinic[clinic_id].max_queue:
+            print("Queue is full")
+        else:
+            self.clinic[clinic_id].queue.append(patient)
+            self.clinic[clinic_id].in_queue += 1
+            self.q.enqueue()
+
         return patient
 
     def check_current_status(self, patient_id):
         """        
-        Check the selected patient status
-        Detail:
-            - Find the patient based on patient_id 
-            and calculate the estimated time
-            - return queue, estimated_time
+            Check the selected patient status
+            Detail:
+                - Find the patient based on patient_id 
+                and calculate the estimated time
+                - return queue, estimated_time
         """
+
+        for key in self.clinic:
+            for patient in self.clinic[key].queue:
+                if patient.patient_id == patient_id:
+                    queue = self.clinic[key].queue
+                    estimated_time = #calculate estimated time
+
         return queue, estimated_time
 
     def show_clinics(self):
@@ -77,11 +93,13 @@ class KlinikService:
             - Find the clinic_id
             - Pop the first index
         """
+        del self.clinic[clinic_id].queue[0]
+        
+        self.clinic[clinic_id].in_queue -= 1
 
 # Main function
 if __name__ == '__main__':
-    # Create XMLRPC Server
-    testttt
-    # Register KlinikService instance
-
-    # Serve forever 
+    server = SimpleXMLRPCServer(("localhost", 6969))
+    server.register_introspection_functions()
+    server.register_instance(ClinicService())
+    server.serve_forever()
