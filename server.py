@@ -5,6 +5,8 @@ from redis import Redis
 # Import Queue
 from rq import Queue
 
+import datetime
+
 class ClinicService:
     """        
         - Buat queue kosong
@@ -42,17 +44,18 @@ class ClinicService:
         """
         
         patient = {
-            'patient_id': 0000, # Mbuh mau digenerate make apa
+            'patient_id': self.total_patients + 1,
             'name': name,
             'dob': date_of_birth
-        }  
+        } 
+        self.total_patients += 1
 
         if self.clinic[clinic_id].in_queue == self.clinic[clinic_id].max_queue:
             print("Queue is full")
         else:
             self.clinic[clinic_id].queue.append(patient)
             self.clinic[clinic_id].in_queue += 1
-            self.q.enqueue()
+            self.q.enqueue_in(datetime.timedelta(minutes=1), self.remove_patient, clinic_id)
 
         return patient
 
@@ -69,7 +72,7 @@ class ClinicService:
             for patient in self.clinic[key].queue:
                 if patient.patient_id == patient_id:
                     queue = self.clinic[key].queue
-                    estimated_time = #calculate estimated time
+                    estimated_time =0 #calculate estimated time
 
         return queue, estimated_time
 
