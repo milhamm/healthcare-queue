@@ -1,10 +1,11 @@
-# Import XMLRPC
+from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCRequestHandler
 # Import Redis
 from redis import Redis
 # Import Queue
 from rq import Queue
 
-class KlinikService:
+class ClinicService:
     """        
         - Buat queue kosong
         - Connect Redis
@@ -77,11 +78,13 @@ class KlinikService:
             - Find the clinic_id
             - Pop the first index
         """
+        del self.clinic[clinic_id].queue[0]
+        
+        self.clinic[clinic_id].in_queue -= 1
 
 # Main function
 if __name__ == '__main__':
-    # Create XMLRPC Server
-    testttt
-    # Register KlinikService instance
-
-    # Serve forever 
+    server = SimpleXMLRPCServer(("localhost", 6969))
+    server.register_introspection_functions()
+    server.register_instance(ClinicService())
+    server.serve_forever()
