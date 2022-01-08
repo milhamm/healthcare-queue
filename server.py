@@ -41,7 +41,7 @@ class KlinikService:
             - Enqueue the remove_patient to the Task Queue (Redis)
             - return patient data
         """
-    return patient
+        return patient
 
     def check_current_status(self, patient_id):
         """        
@@ -74,7 +74,7 @@ class KlinikService:
 # Main function
 if __name__ == '__main__':
     # Create XMLRPC Server
-
+    testttt
     # Register KlinikService instance
 
     # Serve forever 
