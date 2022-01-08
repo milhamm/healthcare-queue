@@ -1,10 +1,19 @@
 # Import XMLRPC
 
+def show_clinic():
+    return
+
+def register_patient():
+    return
+
+def check_status():
+    return
+
 if __name__ == '__main__':
     """        
         Main Client Function
         Detail:
-            - Connect RPC
+            - Connect RPC 
             - Jalan terus
             - Main menu
                 1. Lihat Klinik (show_clinics)
