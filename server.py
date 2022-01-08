@@ -26,11 +26,12 @@ class KlinikService:
         """
     
     def register(self, name, date_of_birth, clinic_id):
-        # patient = {
-        #     patient_id: 0000, # Mbuh mau digenerate make apa
-        #     name:
-        #     dob:
-        # }   
+        patient = {
+            'patient_id': 0000, # Mbuh mau digenerate make apa
+            'name': name,
+            'dob': date_of_birth
+        }   
+        
         """        
         Register the patient by name and date of birth
         Detail:
