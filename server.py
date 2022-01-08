@@ -1,29 +1,33 @@
-# Import XMLRPC
+from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCRequestHandler
 # Import Redis
+from redis import Redis
 # Import Queue
+from rq import Queue
 
-class KlinikService:
+class ClinicService:
     """        
         - Buat queue kosong
         - Connect Redis
     """
     def __init__(self):
-        """ 
-            klinik = {
-                1: {
-                    name: "Klinik Umum",
-                    queue: [0, 1, 2, 3]
-                    in_queue: 3,
-                    max_queue: 4
-                },
-                2: {
-                    name: "Klinik Anak",
-                    queue: []
-                    in_queue: 4,
-                    max_queue: 4
-                }
+        self.total_patients = 0
+        self.clinic = {
+            1: {
+                "name": "Klinik Umum",
+                "queue": [],
+                "in_queue": 0,
+                "max_queue": 4
+            },
+            2: {
+                "name": "Klinik Anak",
+                "queue": [],
+                "in_queue": 0,
+                "max_queue": 5
             }
-        """
+        }
+        self.q = Queue(Redis('178.128.25.31'))
+       
     
     def register(self, name, date_of_birth, clinic_id):
         """        
@@ -70,14 +74,17 @@ class KlinikService:
         return queue, estimated_time
 
     def show_clinics(self):
-        available_klinik = []
+        available_clinics = []
         """        
         Find the available clinic (Queue not full)
         Detail:
             - Find the clinic that is not full
             - return 1 or more klinik
         """
-        return available_klinik
+        for key in self.clinic:
+            if self.clinic[key].in_queue != self.clinic[key].max_queue:
+                available_clinics.append(self.clinic[key])
+        return available_clinics
     
     def remove_patient(self, clinic_id):
         """        
@@ -86,11 +93,13 @@ class KlinikService:
             - Find the clinic_id
             - Pop the first index
         """
+        del self.clinic[clinic_id].queue[0]
+        
+        self.clinic[clinic_id].in_queue -= 1
 
 # Main function
 if __name__ == '__main__':
-    # Create XMLRPC Server
-    testttt
-    # Register KlinikService instance
-
-    # Serve forever 
+    server = SimpleXMLRPCServer(("localhost", 6969))
+    server.register_introspection_functions()
+    server.register_instance(ClinicService())
+    server.serve_forever()
