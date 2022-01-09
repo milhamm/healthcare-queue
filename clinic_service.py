@@ -1,6 +1,3 @@
-from xmlrpc.server import SimpleXMLRPCServer
-from redis import Redis
-from rq import Queue
 from datetime import datetime, timedelta
 
 class ClinicService:
@@ -8,7 +5,7 @@ class ClinicService:
         - Buat queue kosong
         - Connect Redis
     """
-    def __init__(self, q):
+    def __init__(self):
         self.total_patients = 0
         self.clinic = {
             1: {
@@ -24,10 +21,8 @@ class ClinicService:
                 "max_queue": 5
             }
         }
-        self.q = q
        
-    
-    def register(self, name, date_of_birth, clinic_id):
+    def create_patient(self, name, date_of_birth, clinic_id):
         """        
             Register the patient by name and date of birth
             Detail:
@@ -38,28 +33,26 @@ class ClinicService:
                 - Enqueue the remove_patient to the Task Queue (Redis)
                 - return patient data
         """
-        if self.clinic[clinic_id].queue.length == 0:
-            etc = datetime.now() + timedelta(minutes=1)
+        if len(self.clinic[clinic_id]["queue"]) == 0:
+            etc = datetime.now() + timedelta(seconds=20)
         else:
-            etc = self.clinic[clinic_id].queue[-1].etc + timedelta(minutes=1)
+            etc = self.clinic[clinic_id]["queue"][-1]["etc"] + timedelta(seconds=20)
 
         patient = {
             'patient_id': self.total_patients + 1,
             'name': name,
             'dob': date_of_birth,
-            'queue_number': self.clinic[clinic_id].queue.length + 1,
             'etc': etc
         }
 
         self.total_patients += 1
 
-        if self.clinic[clinic_id].in_queue == self.clinic[clinic_id].max_queue:
+        if self.clinic[clinic_id]["in_queue"] == self.clinic[clinic_id]["max_queue"]:
             print("Queue is full")
         else:
-            self.clinic[clinic_id].queue.append(patient)
-            self.clinic[clinic_id].in_queue += 1
-            self.q.enqueue_at(etc, self.remove_patient, clinic_id)
-
+            self.clinic[clinic_id]["queue"].append(patient)
+            self.clinic[clinic_id]["in_queue"] += 1
+            
         return patient
 
     def check_current_status(self, patient_id):
@@ -71,13 +64,18 @@ class ClinicService:
                 - return queue, estimated_time
         """
 
+        print(self.clinic)
         for key in self.clinic:
-            for patient in self.clinic[key].queue:
-                if patient.patient_id == patient_id:
-                    queue = self.clinic[key].queue
-                    estimated_time = patient.etc - datetime.now()
-
-        return queue, estimated_time
+            for patient in self.clinic[key]["queue"]:
+                if patient["patient_id"] == patient_id:
+                    return {
+                        "queue": self.clinic[key]["queue"], 
+                        "etc_in_seconds": (patient["etc"] - datetime.now()).seconds
+                    }
+        return {
+            "queue": None,
+            "etc_in_seconds": None
+        }
 
     def show_clinics(self):
         available_clinics = []
@@ -88,7 +86,7 @@ class ClinicService:
             - return 1 or more klinik
         """
         for key in self.clinic:
-            if self.clinic[key].in_queue != self.clinic[key].max_queue:
+            if self.clinic[key]["in_queue"] != self.clinic[key]["max_queue"]:
                 available_clinics.append(self.clinic[key])
         return available_clinics
     
@@ -99,16 +97,5 @@ class ClinicService:
             - Find the clinic_id
             - Pop the first index
         """
-        del self.clinic[clinic_id].queue[0]
-        
-        self.clinic[clinic_id].in_queue -= 1
-
-# Main function
-if __name__ == '__main__':
-    q = Queue(connection=Redis(host='178.128.25.31', port=6379))
-
-    server = SimpleXMLRPCServer(("localhost", 6969))
-    server.register_introspection_functions()
-    server.register_instance(ClinicService(q))
-    server.serve_forever()
-    
+        self.clinic[clinic_id]["queue"].pop(0)
+        self.clinic[clinic_id]["in_queue"] -= 1
