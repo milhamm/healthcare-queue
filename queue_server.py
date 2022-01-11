@@ -1,20 +1,21 @@
 from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.client import ServerProxy
 from redis import Redis
 from rq import Queue
 import queue_service
+from datetime import datetime
 
 
 class QueueServer:
-    def __init__(self, q, clinic_service):
-        self.clinic_service = clinic_service
+    def __init__(self, q):
         self.q = q
     
-    def register(self, name, date_of_birth, clinic_id):
-        patient = self.clinic_service.create_patient(name, date_of_birth, clinic_id)
-        j = self.q.enqueue_at(patient["etc"], queue_service.remove_patient, clinic_id)
-        print(f"Registered with job_id: {j.id}")
-        return patient
+    def register(self, patient, clinic_id):
+        converted = datetime.strptime(patient['etc'].value, "%Y%m%dT%H:%M:%S")
+        if patient is not None:
+            j = self.q.enqueue_at(converted, queue_service.remove_patient, clinic_id)
+            print(f"Registered with job_id: {j.id}")
+            return True
+        return False
 
     def start(self):
         server = SimpleXMLRPCServer(("localhost", 6970), allow_none=True)
@@ -25,7 +26,6 @@ class QueueServer:
 
 
 if __name__ == '__main__':
-    clinic_service = ServerProxy('http://localhost:6969', allow_none=True, use_datetime=True)
     queue = Queue(connection=Redis(host='178.128.25.31', port=6379))
-    server = QueueServer(queue, clinic_service)
+    server = QueueServer(queue)
     server.start()
