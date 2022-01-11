@@ -35,27 +35,28 @@ class ClinicService:
                 - Enqueue the remove_patient to the Task Queue (Redis)
                 - return patient data
         """
-        if len(self.clinic[clinic_id]["queue"]) == 0:
-            etc = datetime.now() + timedelta(seconds=20)
-        else:
-            etc = self.clinic[clinic_id]["queue"][-1]["etc"] + timedelta(seconds=20)
-
-        patient = {
-            'patient_id': self.total_patients + 1,
-            'name': name,
-            'dob': date_of_birth,
-            'etc': etc
-        }
-
-        self.total_patients += 1
-
         if self.clinic[clinic_id]["in_queue"] == self.clinic[clinic_id]["max_queue"]:
             print("Queue is full")
         else:
+            if len(self.clinic[clinic_id]["queue"]) == 0:
+                etc = datetime.now() + timedelta(minutes=1)
+            else:
+                etc = self.clinic[clinic_id]["queue"][-1]["etc"] + timedelta(seconds=20)
+
+            patient = {
+                'patient_id': self.total_patients + 1,
+                'name': name,
+                'dob': date_of_birth,
+                'etc': etc
+            }
+
+            self.total_patients += 1
             self.clinic[clinic_id]["queue"].append(patient)
             self.clinic[clinic_id]["in_queue"] += 1
 
-        return patient
+            return patient
+
+        return None
 
     def check_current_status(self, patient_id):
         """        
