@@ -17,6 +17,7 @@ def input_number(message, ranges, error_message):
 def calculate_estimated(etc):
     return (etc - datetime.now()).seconds
 
+
 def print_queue(queue):
     if len(queue) == 0:
         print("Empty Queue")
@@ -40,6 +41,7 @@ def print_queue(queue):
                           f"{etc_minutes}m {etc_seconds}s left"))
         print(f"{'-'*60}\n")
 
+
 def print_clinic(clinics):
     ids = 1
     for clinic in clinics:
@@ -54,7 +56,7 @@ def print_clinic(clinics):
 class Client:
     def __init__(self, host):
         self.clinic_service = ServerProxy(f"{host}:6969")
-        self.queue_service = ServerProxy(f"{host}:6970")
+        print(self.clinic_service.system.listMethods())
 
     def show_clinic(self):
         return self.clinic_service.show_clinics()
@@ -67,7 +69,7 @@ class Client:
             ranges=range(1, 3),
             error_message="Invalid Clinic ID")
 
-        patient = self.queue_service.register(name, dob, clinic_id)
+        patient = self.clinic_service.register(name, dob, clinic_id)
         print(patient)
 
     def check_status(self):

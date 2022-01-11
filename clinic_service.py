@@ -7,7 +7,7 @@ class ClinicService:
         - Connect Redis
     """
 
-    def __init__(self):
+    def __init__(self, queue_service):
         self.total_patients = 0
         self.clinic = {
             1: {
@@ -23,6 +23,15 @@ class ClinicService:
                 "max_queue": 5
             }
         }
+        self.queue_service = queue_service
+        print(self.queue_service.system.listMethods())
+
+    def register(self, name, date_of_birth, clinic_id):
+        patient = self.create_patient(name, date_of_birth, clinic_id)
+        resp = self.queue_service.register(patient, clinic_id)
+        if resp:
+            return patient
+        return None
 
     def create_patient(self, name, date_of_birth, clinic_id):
         """        
@@ -54,6 +63,7 @@ class ClinicService:
             self.clinic[clinic_id]["queue"].append(patient)
             self.clinic[clinic_id]["in_queue"] += 1
 
+            print("Create Patient success")
             return patient
 
         return None
