@@ -1,16 +1,18 @@
 from datetime import datetime, timedelta
 
+
 class ClinicService:
     """        
         - Buat queue kosong
         - Connect Redis
     """
+
     def __init__(self):
         self.total_patients = 0
         self.clinic = {
             1: {
                 "name": "Klinik Umum",
-                "queue": [],
+                "queue": [{'patient_id': -1, 'name': 'Fikri', 'dob': '22/02/01', 'etc': datetime.now() + timedelta(minutes=40)}],
                 "in_queue": 0,
                 "max_queue": 4
             },
@@ -21,7 +23,7 @@ class ClinicService:
                 "max_queue": 5
             }
         }
-       
+
     def create_patient(self, name, date_of_birth, clinic_id):
         """        
             Register the patient by name and date of birth
@@ -52,7 +54,7 @@ class ClinicService:
         else:
             self.clinic[clinic_id]["queue"].append(patient)
             self.clinic[clinic_id]["in_queue"] += 1
-            
+
         return patient
 
     def check_current_status(self, patient_id):
@@ -63,19 +65,14 @@ class ClinicService:
                 and calculate the estimated time
                 - return queue, estimated_time
         """
-
-        print(self.clinic)
         for key in self.clinic:
             for patient in self.clinic[key]["queue"]:
                 if patient["patient_id"] == patient_id:
                     return {
-                        "queue": self.clinic[key]["queue"], 
+                        "queue": self.clinic[key]["queue"],
                         "etc_in_seconds": (patient["etc"] - datetime.now()).seconds
                     }
-        return {
-            "queue": None,
-            "etc_in_seconds": None
-        }
+        return None
 
     def show_clinics(self):
         available_clinics = []
@@ -89,7 +86,7 @@ class ClinicService:
             if self.clinic[key]["in_queue"] != self.clinic[key]["max_queue"]:
                 available_clinics.append(self.clinic[key])
         return available_clinics
-    
+
     def remove_patient(self, clinic_id):
         """        
         Remove the patient when time is out
