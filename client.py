@@ -1,13 +1,18 @@
 # Import XMLRPC
+from xmlrpc.client import ServerProxy
 
-def show_clinic():
-    return
+class Client:
+    def __init__(self, host, port):
+        self.clinic_service = ServerProxy(f"{host}:port")
+        self.queue_service = ServerProxy(f"{host}:port")
+    def show_clinic():
+        return
 
-def register_patient():
-    return
+    def register_patient():
+        return
 
-def check_status():
-    return
+    def check_status():
+        return
 
 if __name__ == '__main__':
     """        
