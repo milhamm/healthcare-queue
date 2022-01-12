@@ -11,13 +11,13 @@ class ClinicService:
         self.total_patients = 0
         self.clinic = {
             1: {
-                "name": "Klinik Umum",
-                "queue": [{'patient_id': -1, 'name': 'Fikri', 'dob': '22/02/01', 'etc': datetime.now() + timedelta(minutes=40)}],
+                "name": "General Clinic",
+                "queue": [],
                 "in_queue": 0,
                 "max_queue": 4
             },
             2: {
-                "name": "Klinik Anak",
+                "name": "Children Clinic",
                 "queue": [],
                 "in_queue": 0,
                 "max_queue": 5
@@ -35,14 +35,14 @@ class ClinicService:
 
     def create_patient(self, name, date_of_birth, clinic_id):
         """        
-            Register the patient by name and date of birth
-            Detail:
-                - Create a patient_id based on the current queue
-                - Check whether the queue is full
-                - Insert the data to the queue (FIFO)
-                - Update the klinik data (in_queue + 1)
-                - Enqueue the remove_patient to the Task Queue (Redis)
-                - return patient data
+        Register the patient by name and date of birth
+        Detail:
+            - Create a patient_id based on the current queue
+            - Check whether the queue is full
+            - Insert the data to the queue (FIFO)
+            - Update the klinik data (in_queue + 1)
+            - Enqueue the remove_patient to the Task Queue (Redis)
+            - return patient data
         """
         if self.clinic[clinic_id]["in_queue"] == self.clinic[clinic_id]["max_queue"]:
             print("Queue is full")
@@ -70,16 +70,17 @@ class ClinicService:
 
     def check_current_status(self, patient_id):
         """        
-            Check the selected patient status
-            Detail:
-                - Find the patient based on patient_id 
-                and calculate the estimated time
-                - return queue, estimated_time
+        Check the selected patient status
+        Detail:
+            - Find the patient based on patient_id
+            and calculate the estimated time
+            - return queue, estimated_time
         """
         for key in self.clinic:
             for patient in self.clinic[key]["queue"]:
                 if patient["patient_id"] == patient_id:
                     return {
+                        "patient": patient,
                         "queue": self.clinic[key]["queue"],
                         "etc_in_seconds": (patient["etc"] - datetime.now()).seconds
                     }
@@ -97,6 +98,9 @@ class ClinicService:
             if self.clinic[key]["in_queue"] != self.clinic[key]["max_queue"]:
                 available_clinics.append(self.clinic[key])
         return available_clinics
+
+    def show_all_clinics(self):
+        return [self.clinic[key] for key in self.clinic]
 
     def remove_patient(self, clinic_id):
         """        

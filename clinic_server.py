@@ -6,6 +6,7 @@ from xmlrpc.client import ServerProxy
 class ClinicServer:
     def __init__(self, clinic_service):
         self.clinic_service = clinic_service
+
     def start(self):
         server = SimpleXMLRPCServer(("localhost", 6969), allow_none=True)
         server.register_introspection_functions()

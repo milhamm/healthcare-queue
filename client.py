@@ -15,31 +15,45 @@ def input_number(message, ranges, error_message):
 
 
 def calculate_estimated(etc):
-    return (etc - datetime.now()).seconds
+    estimated = (etc - datetime.now()).seconds
+    if estimated >= 300:
+        return None
+    return estimated
+
+
+def convert_to_minutes_and_seconds(etc_time):
+    return etc_time // 60, etc_time % 60
+
+
+def get_estimated_string(patient):
+    converted = datetime.strptime(patient['etc'].value, "%Y%m%dT%H:%M:%S")
+    etc_time = calculate_estimated(converted)
+    if etc_time is None:
+        etc_string = "Soon"
+    else:
+        etc_minutes, etc_seconds = convert_to_minutes_and_seconds(etc_time)
+        etc_string = f"{etc_minutes}m {etc_seconds}s left"
+    return etc_string
 
 
 def print_queue(queue):
     if len(queue) == 0:
         print("Empty Queue")
     else:
-        print("| {:<8} | {:<15} | {:<12} | {:12} |"
+        print("| {:<8} | {:<15} | {:<12} | {:14} |"
               .format("PID",
                       "Patient Name",
                       "Birthdate",
                       "Completed In"))
         print(f"{'-' * 60}")
         for patient in queue:
-            converted = datetime.strptime(patient['etc'].value, "%Y%m%dT%H:%M:%S")
-            etc_time = calculate_estimated(converted)
-            etc_minutes = etc_time // 60
-            etc_seconds = etc_time % 60
-
-            print("| {:<8} | {:<15} | {:<12} | {:12} |"
+            etc_string = get_estimated_string(patient)
+            print("| {:>8} | {:<15} | {:<12} | {:14} |"
                   .format(patient['patient_id'],
                           patient['name'],
                           patient['dob'],
-                          f"{etc_minutes}m {etc_seconds}s left"))
-        print(f"{'-'*60}\n")
+                          etc_string))
+        print(f"{'-'*62}\n")
 
 
 def print_clinic(clinics):
@@ -53,13 +67,32 @@ def print_clinic(clinics):
         ids += 1
 
 
+def print_patient(patient):
+    etc_string = get_estimated_string(patient)
+    print(f"{'-' * 62}")
+    print("| {:<8} | {:<15} | {:<12} | {:14} |"
+          .format("PID",
+                  "Patient Name",
+                  "Birthdate",
+                  "Completed In"))
+    print(f"{'-' * 60}")
+    print("| {:>8} | {:<15} | {:<12} | {:14} |"
+          .format(patient['patient_id'],
+                  patient['name'],
+                  patient['dob'],
+                  etc_string))
+    print(f"{'-' * 62}\n")
+
+
 class Client:
     def __init__(self, host):
-        self.clinic_service = ServerProxy(f"{host}:6969")
-        print(self.clinic_service.system.listMethods())
+        self.clinic_service = ServerProxy(f"{host}", allow_none=True)
 
     def show_clinic(self):
         return self.clinic_service.show_clinics()
+
+    def show_all_clinic(self):
+        return self.clinic_service.show_all_clinics()
 
     def register_patient(self):
         name = input("Patient name: ")
@@ -70,10 +103,20 @@ class Client:
             error_message="Invalid Clinic ID")
 
         patient = self.clinic_service.register(name, dob, clinic_id)
-        print(patient)
+        if patient is None:
+            print("Queue is full")
+
+        print("Register Success")
+        print_patient(patient)
 
     def check_status(self):
-        return
+        patient_id = input_number(
+            "Patient ID: ", range(0, 999), "Not a valid Patient ID")
+        patient = self.clinic_service.check_current_status(patient_id)
+        if patient is None:
+            print("Not Found\n")
+            return
+        print_patient(patient['patient'])
 
     def menu(self, options):
         if options == 1:
@@ -81,8 +124,17 @@ class Client:
             print("-- Clinics Available --")
             print_clinic(clinics)
         elif options == 2:
+            clinics = self.show_all_clinic()
+            print("-- All Clinics --")
+            print_clinic(clinics)
+        elif options == 3:
             print("-- Register Patient --")
             self.register_patient()
+        elif options == 4:
+            print("-- Patient Status --")
+            self.check_status()
+        else:
+            exit(0)
 
     def start(self):
         print("Parallel & Distributed System Final Project")
@@ -91,17 +143,15 @@ class Client:
         while True:
             print("Menu\n"
                   "1. Show Available Clinics\n"
-                  "2. Register Patient\n"
-                  "3. Check Patient Status\n"
-                  "4. Exit")
+                  "2. Show All Clinics\n"
+                  "3. Register Patient\n"
+                  "4. Check Patient Status\n"
+                  "5. Exit")
 
             option = input_number(
                 message="Selection: ",
-                ranges=range(1, 5),
+                ranges=range(1, 6),
                 error_message="Please enter a valid input")
-
-            if option == 4:
-                break
 
             self.menu(option)
 
@@ -116,5 +166,5 @@ if __name__ == '__main__':
         3. Check Status of a Patient (check_current_status)
         4. Exit
     """
-    client = Client('http://localhost')
+    client = Client('http://localhost:6969')
     client.start()
